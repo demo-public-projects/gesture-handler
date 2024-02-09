@@ -1,52 +1,47 @@
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withRepeat,
   withTiming,
   withSpring,
-  runOnJS,
-  runOnUI,
+  interpolate,
+  interpolateColor,
 } from "react-native-reanimated";
 import { Button, Pressable, StyleSheet, Text, View } from "react-native";
-import { useState } from "react";
 
 export default function App() {
   const progress = useSharedValue(100);
-  const [finished, setFinished] = useState(false);
 
   const startAnimation = () => {
     progress.value = withTiming(
       progress.value + 100,
       { duration: 2000 },
       () => {
-        progress.value = withSpring(
-          100,
-          {
-            mass: 2.6,
-            damping: 8,
-            stiffness: 201,
-          },
-          () => runOnJS(setFinished)(true)
-        );
+        progress.value = withSpring(100, {
+          mass: 2.6,
+          damping: 8,
+          stiffness: 201,
+        });
       }
     );
   };
 
   const transformEval = () => {
     "worklet";
-    return progress.value / 100;
-  };
-
-  const onButtonPress = () => {
-    runOnUI(() => {
-      const evalResult = transformEval();
-      console.log(evalResult);
-    })();
+    return interpolate(progress.value, [100, 200], [1, 3]);
   };
 
   const rstyle = useAnimatedStyle(() => ({
     borderRadius: progress.value - 100,
-    transform: [{ scale: transformEval() }],
+    transform: [
+      { scale: transformEval() },
+      { rotate: interpolate(progress.value, [100, 200], [0, 180]) + "deg" },
+    ],
+    opacity: interpolate(progress.value, [100, 200], [1, 0.3]),
+    backgroundColor: interpolateColor(
+      progress.value,
+      [100, 150, 200],
+      ["blue","yellow", "red"]
+    ),
   }));
 
   return (
@@ -56,13 +51,11 @@ export default function App() {
           {
             height: 100,
             width: 100,
-            backgroundColor: "violet",
+            backgroundColor: "blue",
           },
           rstyle,
         ]}
       />
-      {finished && <Text>Finished!</Text>}
-      <Button title="Click Me" onPress={onButtonPress} />
     </Pressable>
   );
 }
