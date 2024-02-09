@@ -4,29 +4,49 @@ import Animated, {
   withRepeat,
   withTiming,
   withSpring,
+  runOnJS,
+  runOnUI,
 } from "react-native-reanimated";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { useEffect } from "react";
+import { Button, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
 
 export default function App() {
   const progress = useSharedValue(100);
+  const [finished, setFinished] = useState(false);
 
   const startAnimation = () => {
     progress.value = withTiming(
       progress.value + 100,
       { duration: 2000 },
-      () => {progress.value = withSpring(100, {
-        mass: 2.6,
-        damping: 8,
-        stiffness: 201,
-      });}
+      () => {
+        progress.value = withSpring(
+          100,
+          {
+            mass: 2.6,
+            damping: 8,
+            stiffness: 201,
+          },
+          () => runOnJS(setFinished)(true)
+        );
+      }
     );
   };
 
+  const transformEval = () => {
+    "worklet";
+    return progress.value / 100;
+  };
+
+  const onButtonPress = () => {
+    runOnUI(() => {
+      const evalResult = transformEval();
+      console.log(evalResult);
+    })();
+  };
+
   const rstyle = useAnimatedStyle(() => ({
-    width: progress.value,
     borderRadius: progress.value - 100,
-    transform: [{ translateX: progress.value * 2 - 300 }],
+    transform: [{ scale: transformEval() }],
   }));
 
   return (
@@ -35,11 +55,14 @@ export default function App() {
         style={[
           {
             height: 100,
+            width: 100,
             backgroundColor: "violet",
           },
           rstyle,
         ]}
       />
+      {finished && <Text>Finished!</Text>}
+      <Button title="Click Me" onPress={onButtonPress} />
     </Pressable>
   );
 }
@@ -49,6 +72,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     alignItems: "center",
-    justifyContent: "center",
+    marginVertical: 300,
   },
 });
