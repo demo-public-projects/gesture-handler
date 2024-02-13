@@ -5,57 +5,41 @@ import Animated, {
   withSpring,
   interpolate,
   interpolateColor,
+  withRepeat,
+  useAnimatedProps,
 } from "react-native-reanimated";
 import { Button, Pressable, StyleSheet, Text, View } from "react-native";
+import Svg, { Ellipse } from "react-native-svg";
+
+const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
+
+const radius = 40;
 
 export default function App() {
-  const progress = useSharedValue(100);
+  const distortion = useSharedValue(-10);
+  const animatedProps = useAnimatedProps(() => ({
+    rx: radius - distortion.value,
+    ry: radius + distortion.value,
+  }));
 
   const startAnimation = () => {
-    progress.value = withTiming(
-      progress.value + 100,
-      { duration: 2000 },
-      () => {
-        progress.value = withSpring(100, {
-          mass: 2.6,
-          damping: 8,
-          stiffness: 201,
-        });
-      }
-    );
+    distortion.value = withRepeat(withTiming(10, { duration: 100 }), 2, true);
   };
-
-  const transformEval = () => {
-    "worklet";
-    return interpolate(progress.value, [100, 200], [1, 3]);
-  };
-
-  const rstyle = useAnimatedStyle(() => ({
-    borderRadius: progress.value - 100,
-    transform: [
-      { scale: transformEval() },
-      { rotate: interpolate(progress.value, [100, 200], [0, 180]) + "deg" },
-    ],
-    opacity: interpolate(progress.value, [100, 200], [1, 0.3]),
-    backgroundColor: interpolateColor(
-      progress.value,
-      [100, 150, 200],
-      ["blue","yellow", "red"]
-    ),
-  }));
 
   return (
     <Pressable style={styles.container} onPress={startAnimation}>
-      <Animated.View
-        style={[
-          {
-            height: 100,
-            width: 100,
-            backgroundColor: "blue",
-          },
-          rstyle,
-        ]}
-      />
+      <Svg viewBox="0 0 150 150" height="300" width="300">
+        <AnimatedEllipse
+          cx="75"
+          cy="75"
+          animatedProps={animatedProps}
+          // rx="50"
+          // ry="30"
+          stroke="lightblue"
+          strokeWidth="10"
+          fill="white"
+        />
+      </Svg>
     </Pressable>
   );
 }
@@ -65,6 +49,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     alignItems: "center",
-    marginVertical: 300,
+    justifyContent: "center",
   },
 });
