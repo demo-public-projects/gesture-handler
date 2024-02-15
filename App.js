@@ -1,54 +1,52 @@
+import React from "react";
+import { StyleSheet, View } from "react-native";
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
-  withTiming,
-  withSpring,
-  interpolate,
-  interpolateColor,
-  withRepeat,
-  useAnimatedProps,
+  useSharedValue,
 } from "react-native-reanimated";
-import { Button, Pressable, StyleSheet, Text, View } from "react-native";
-import Svg, { Ellipse } from "react-native-svg";
+import {
+  GestureDetector,
+  Gesture,
+  GestureHandlerRootView,
+} from "react-native-gesture-handler";
 
-const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
-
-const radius = 40;
-
-export default function App() {
-  const distortion = useSharedValue(-10);
-  const animatedProps = useAnimatedProps(() => ({
-    rx: radius - distortion.value,
-    ry: radius + distortion.value,
+function Ball() {
+  const isPressed = useSharedValue(false);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: isPressed.value ? 1.3 : 1 }],
+    opacity: isPressed.value ? 1 : 0.5,
   }));
 
-  const startAnimation = () => {
-    distortion.value = withRepeat(withTiming(10, { duration: 100 }), 2, true);
-  };
-
+  const pan = Gesture.Pan()
+    .onBegin(() => {
+      isPressed.value = true;
+    })
+    .onFinalize(() => (isPressed.value = false));
   return (
-    <Pressable style={styles.container} onPress={startAnimation}>
-      <Svg viewBox="0 0 150 150" height="300" width="300">
-        <AnimatedEllipse
-          cx="75"
-          cy="75"
-          animatedProps={animatedProps}
-          // rx="50"
-          // ry="30"
-          stroke="lightblue"
-          strokeWidth="10"
-          fill="white"
-        />
-      </Svg>
-    </Pressable>
+    <GestureDetector gesture={pan}>
+      <Animated.View style={[styles.ball, animatedStyle]} />
+    </GestureDetector>
+  );
+}
+
+export default function App() {
+  return (
+    <GestureHandlerRootView style={styles.container}>
+      <Ball />
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+  },
+  ball: {
+    width: 100,
+    height: 100,
+    borderRadius: 100,
+    backgroundColor: "blue",
   },
 });
