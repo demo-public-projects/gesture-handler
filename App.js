@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
 import {
   GestureDetector,
@@ -12,8 +13,17 @@ import {
 
 function Ball() {
   const isPressed = useSharedValue(false);
+  const offset = useSharedValue({ x: 0, y: 0 });
+  function scaleEval() {
+    "worklet";
+    return isPressed.value ? 1.3 : 1;
+  }
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: isPressed.value ? 1.3 : 1 }],
+    transform: [
+      { scale: scaleEval() },
+      { translateX: offset.value.x / scaleEval() },
+      { translateY: offset.value.y / scaleEval() },
+    ],
     opacity: isPressed.value ? 1 : 0.5,
   }));
 
@@ -21,7 +31,19 @@ function Ball() {
     .onBegin(() => {
       isPressed.value = true;
     })
-    .onFinalize(() => (isPressed.value = false));
+    .onChange((event) => {
+      offset.value = {
+        x: offset.value.x + event.changeX,
+        y: offset.value.y + event.changeY,
+      };
+    })
+    .onFinalize(() => {
+      isPressed.value = false;
+      offset.value = withSpring(
+        { x: 0, y: 0 },
+        { mass: 2.4, stiffness: 325, damping: 8 }
+      );
+    });
   return (
     <GestureDetector gesture={pan}>
       <Animated.View style={[styles.ball, animatedStyle]} />
