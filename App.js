@@ -14,6 +14,7 @@ import {
 
 function Ball() {
   const isPressed = useSharedValue(false);
+  const isTapped = useSharedValue(false);
   const offset = useSharedValue({ x: 0, y: 0 });
   function scaleEval() {
     "worklet";
@@ -21,44 +22,47 @@ function Ball() {
   }
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
-      // { scale: scaleEval() },
+      { scale: scaleEval() },
       { translateX: offset.value.x / scaleEval() },
       { translateY: offset.value.y / scaleEval() },
     ],
-    // opacity: isPressed.value ? 1 : 0.5,
+    backgroundColor: isTapped.value ? "red" : "blue",
+    opacity: isPressed.value ? 1 : 0.5,
   }));
 
-  // const pan = Gesture.Pan()
-  //   .onBegin(() => {
-  //     isPressed.value = true;
-  //   })
-  //   .onChange((event) => {
-  //     offset.value = {
-  //       x: offset.value.x + event.changeX,
-  //       y: offset.value.y + event.changeY,
-  //     };
-  //   })
-  //   .onFinalize(() => {
-  //     isPressed.value = false;
-  //     offset.value = withSpring(
-  //       { x: 0, y: 0 },
-  //       { mass: 2.4, stiffness: 325, damping: 8 }
-  //     );
-  //   });
+  const pan = Gesture.Pan()
+    .onBegin(() => {
+      isPressed.value = true;
+    })
+    .onChange((event) => {
+      offset.value = {
+        x: offset.value.x + event.changeX,
+        y: offset.value.y + event.changeY,
+      };
+    })
+    .onFinalize(() => {
+      isPressed.value = false;
+      offset.value = withSpring(
+        { x: 0, y: 0 },
+        { mass: 2.4, stiffness: 325, damping: 8 }
+      );
+    });
 
   const tap = Gesture.Tap()
     .numberOfTaps(2)
     .onStart(() => {
-      offset.value = withTiming({x: 0, y: -200}, undefined, () => {
+      isTapped.value = true;
+      offset.value = withTiming({ x: 0, y: -200 }, undefined, () => {
         offset.value = withSpring(
           { x: 0, y: 0 },
-          { mass: 2.4, stiffness: 325, damping: 8 }
+          { mass: 2.4, stiffness: 325, damping: 8 },
+          () => (isTapped.value = false)
         );
-      })
+      });
     });
 
   return (
-    <GestureDetector gesture={tap}>
+    <GestureDetector gesture={Gesture.Race(tap, pan)}>
       <Animated.View style={[styles.ball, animatedStyle]} />
     </GestureDetector>
   );
